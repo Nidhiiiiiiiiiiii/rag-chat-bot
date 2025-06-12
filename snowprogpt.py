@@ -10,15 +10,13 @@ Original file is located at
 !pip install -q langchain pypdf faiss-cpu sentence-transformers gradio huggingface-hub
 
 from google.colab import files
-uploaded = files.upload()  # Select your PDF file (e.g., "doc.pdf")
-pdf_path = next(iter(uploaded))  # Get the uploaded filename
+uploaded = files.upload()
+pdf_path = next(iter(uploaded))
 
 !pip install -U langchain-community langchain pypdf faiss-cpu sentence-transformers gradio huggingface-hub
 
-# First install all required packages
 !pip install -q langchain-community pypdf faiss-cpu sentence-transformers huggingface-hub gradio
 
-# Now the corrected imports
 from google.colab import files
 from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -29,34 +27,25 @@ from langchain.chains import RetrievalQA
 import gradio as gr
 import os
 
-# 1. Upload PDF
 uploaded = files.upload()
 pdf_path = next(iter(uploaded))
 
-# 2. Load and split PDF
 loader = PyPDFLoader(pdf_path)
 pages = loader.load_and_split()
 
-# 3. Chunk text
 text_splitter = RecursiveCharacterTextSplitter(
     chunk_size=500,
     chunk_overlap=50
 )
 chunks = text_splitter.split_documents(pages)
 
-# 4. Create embeddings
 embeddings = HuggingFaceEmbeddings(
     model_name="all-MiniLM-L6-v2",
     model_kwargs={"device": "cpu"}  # Use "cuda" if GPU is available
 )
 
-# 5. Store in vector DB
 vector_db = FAISS.from_documents(chunks, embeddings)
 
-# 6. Set up LLM
-# **Get your actual Hugging Face API token from:**
-# **https://huggingface.co/settings/tokens**
-# **and set it as an environment variable**
 os.environ["HUGGINGFACEHUB_API_TOKEN"] = "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" # Replace with your actual token.
 llm = HuggingFaceHub(
     repo_id="google/flan-t5-large",
@@ -65,17 +54,15 @@ llm = HuggingFaceHub(
         "temperature": 0.3,
         "do_sample": True
     },
-    task="text-generation"  # Explicitly specify the task
+    task="text-generation" 
 )
 
-# 7. Create RAG chain
 qa_chain = RetrievalQA.from_chain_type(
     llm=llm,
     chain_type="stuff",
-    retriever=vector_db.as_retriever(search_kwargs={"k": 3})  # Retrieve 3 chunks
+    retriever=vector_db.as_retriever(search_kwargs={"k": 3}) 
 )
 
-# 8. Create interface
 def ask_question(question):
     try:
         return qa_chain.run(question)
